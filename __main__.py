@@ -42,7 +42,8 @@ class Tree:
         t, f = self.partition(table, question)
         tEnt = self.get_entropy(t)
         fEnt = self.get_entropy(f)
-        return dEnt - ((len(t) / table_len) * tEnt + (len(f) / table_len) * fEnt)
+        gain = dEnt - ((len(t) / table_len) * tEnt + (len(f) / table_len) * fEnt)
+        return gain
 
     def get_entropy(self, table):
         fractions = self.get_fractions(table)
@@ -55,7 +56,8 @@ class Tree:
             if col != self.target:
                 for val in table[col].unique():
                     if np.issubdtype(table[col].dtype, np.number):
-                        questions.append(Question(operator.lt, col, val))
+                        if (val != table[col].min() and val != table[col].max()):
+                            questions.append(Question(operator.lt, col, val))
                     else:
                         questions.append(Question(operator.eq, col, val))
         return questions
@@ -81,23 +83,34 @@ class Tree:
         tab[self.target] = targets
         return tab
 
-df = pd.read_csv("data/train.csv")
+
+def clean(tab):
+    drop_cols = ["Name", "Ticket", "PassengerId", "Cabin"]
+    tab = tab.drop(drop_cols, axis=1)
+    tab = tab.fillna(0)
+    tab = tab.astype({'Fare': 'int32', 'Age': 'int32'})
+    return tab
+
+
+df_train = pd.read_csv("data/train.csv")
 print("read data")
+
 df_testing = pd.read_csv("data/test.csv")
 print("read testing data")
 
-df = df.drop("PassengerId", axis=1)
-df_testing = df_testing.drop("PassengerId", axis=1)
-print("dropped cols")
+df_train = clean(df_train)
+df_testing = clean(df_testing)
 
+print("dropped cols")
+#X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.33, random_state=42)
 
 tree = Tree()
 print("made tree object")
-tree.train(df, "Survived")
+tree.train(df_train, "Survived")
 print("trained tree")
 
-df_testing = tree.predict_table(df)
-print(df_testing)
+y_pred = tree.predict_table(df_testing)
+print(y_pred)
 print("predicted")
 
 '''

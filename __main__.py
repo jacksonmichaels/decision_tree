@@ -26,6 +26,9 @@ class Tree:
             return node
         t, f = self.partition(table, best_q)
         node.question = best_q
+
+        print("Best Question:", best_q)
+
         node.true_child = self.generate_tree(t, depth + 1)
         node.false_child = self.generate_tree(f, depth + 1)
         return node
